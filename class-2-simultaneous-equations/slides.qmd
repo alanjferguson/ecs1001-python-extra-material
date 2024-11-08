@@ -1,0 +1,223 @@
+---
+title: Simultaneous Equations using NumPy
+author: Dr Alan Ferguson
+date: 2024-10-11
+format: revealjs
+execute:
+    echo: true
+    cache: true
+---
+
+## Objectives
+
+- Use NumPy to solve systems of linear equations
+- Use NumPy to fit coefficients to a linear equation
+- Use NumPy to solve a mesh circuit using nodal analysis
+
+## Solving Linear Equations Using NumPy
+
+### Introduction
+
+In mathematical problems, **linear equations** appear in the form:
+
+$$ \mathbf{A} \cdot \mathbf{x} = \mathbf{b} $$
+
+Where:
+
+- $\mathbf{A}$ is the matrix of coefficients.
+- $\mathbf{x}$ is the vector of variables.
+- $\mathbf{b}$ is the vector of results.
+
+## Solving Linear Systems with NumPy
+
+### Example:
+
+Consider the system of equations:
+
+$$
+2x + y = 5\\
+3x + 4y = 6
+$$
+
+What does this look like as matrices, i.e. $\mathbf{A x} = \mathbf{b}$?
+
+
+Represented as:
+
+$$
+A x = b\\
+\begin{bmatrix} 2 & 1 \\ 3 & 4 \end{bmatrix} \begin{bmatrix} x \\ y\end{bmatrix} = \begin{bmatrix} 5 \\ 6 \end{bmatrix}
+$$
+
+We can solve it using the matrix inverse using NumPy
+
+```{python}
+import numpy as np
+
+A = np.array([[2, 1], [3, 4]])
+b = np.array([5, 6])
+
+# Step 1: Find the inverse of A
+A_inv = np.linalg.inv(A)
+
+# Step 2: Multiply the inverse of A by b
+x = A_inv @ b # @ sign is matrix multiplication
+
+print(x)  # Solution for [x, y]
+```
+
+---
+
+The Python library **NumPy** provides a convenient method to solve linear equations using the function `np.linalg.solve()`.
+
+```{python}
+import numpy as np
+
+A = np.array([[2, 1], [3, 4]])
+b = np.array([5, 6])
+
+x = np.linalg.solve(A, b)
+print(x)  
+```
+
+## Fitting a Polynomial by Solving System of Equations
+
+In many real-world applications, we need to fit a polynomial to a set of data points. This means finding the best-fitting polynomial of a given degree for the data.
+
+To fit a polynomial to a set of data points manually, we can set up and solve a system of equations. Given data points $(x_1, y_1), (x_2, y_2), ..., (x_n, y_n)$, and a desired polynomial of degree **d**, the polynomial takes the form:
+
+$$ p(x) = a_d x^d + a_{d-1} x^{d-1} + \dots + a_1 x + a_0 $$
+
+We need to solve for the coefficients $a_0, a_1, ..., a_d$ .
+
+### Steps to Fit a Polynomial Manually
+
+1. **Set up a System of Linear Equations**:  
+   For each data point $(x_i, y_i)$, the polynomial equation becomes:
+   
+   $$ y_i = a_d x_i^d + a_{d-1} x_i^{d-1} + \dots + a_0 $$
+   
+   This gives us a system of equations with unknowns $a_0, a_1, ..., a_d$.
+   
+2. **Solve the System of Equations**:  
+   We solve for the unknowns by representing the system in matrix form and using `numpy.linalg.solve()` or the inverse matrix method.
+
+### Example:
+
+Let's fit a quadratic polynomial (degree 2) to the following data points:
+- Data:  
+  x = [1, 2, 3]  
+  y = [1, 4, 9]
+
+The quadratic polynomial takes the form:
+$$ p(x) = a_2 x^2 + a_1 x + a_0 $$
+
+#### Step 1: Set up the System of Equations
+
+For the data points:
+
+- $1 = a_2 (1^2) + a_1 (1) + a_0(1)$
+- $4 = a_2 (2^2) + a_1 (2) + a_0(1)$
+- $9 = a_2 (3^2) + a_1 (3) + a_0(1)$
+
+This leads to the system of equations:
+$$ \begin{bmatrix} 
+1 & 1 & 1 \\
+4 & 2 & 1 \\
+9 & 3 & 1 
+\end{bmatrix} 
+\cdot 
+\begin{bmatrix} 
+a_2 \\ a_1 \\ a_0 
+\end{bmatrix} 
+= 
+\begin{bmatrix} 
+1 \\ 4 \\ 9 
+\end{bmatrix} $$
+
+#### Step 2: Solve the System Using NumPy
+
+```{python}
+import numpy as np
+
+# Coefficient matrix A
+A = np.array([[1**2, 1, 1], 
+              [2**2, 2, 1], 
+              [3**2, 3, 1]])
+
+# Result vector b
+b = np.array([1, 4, 9])
+
+# Solve for the coefficients [a2, a1, a0]
+coefficients = np.linalg.solve(A, b)
+
+print("Fitted coefficients:", coefficients)
+```
+
+## Nodal Analysis using Matrices
+
+- Nodal analysis is a method for determining voltages at each node in a circuit.
+- Based on Kirchoffs Current Law (KCL): the sum of currents *leaving* a node is zero.
+
+Steps for nodal analysis:
+
+1. Select your reference/ground node;
+2. Assign voltages, $V_1, V_2,\ldots$, to the other nodes;
+3. Write KCL expressions for each node;
+4. Solve system of equations.
+
+## Representing circuits as matrices
+
+- We can rewrite KCL equations as matrix equation, $\mathbf{G} \mathbf{V} = \mathbf{I}$, where:
+   - $\mathbf{G}$ is the conductance matrix, note: $G = 1 / R$;
+   - $\mathbf{V}$ is the vector of unknown voltages; and
+   - $\mathbf{I}$ is vector of current sources.
+
+## Example Circuit
+
+![Voltage divider circuit](voltage_divider.png){width=100%}
+
+## Solution
+
+```{python}
+R1 = 100
+R2 = 200
+
+G1 = 1.0 / R1
+G2 = 1.0 / R2
+
+G_mat = np.array([
+   [G1, -G1],
+   [-G1, (G1 + G2)]
+])
+
+I = np.array([5e-3, 0.0])
+
+V = np.linalg.solve(G_mat, I) 
+
+print(f"V1: {V[0]:g}V, V2: {V[1]:g}V")
+```
+
+## Exercises
+
+### Task 1
+You have two coffee blends:
+
+- Blend A is 30% Arabica coffee beans
+- Blend B is 60% Arabica coffee beans
+
+You need to prepare 10 kilograms of a new blend that contains 45% Arabica by mixing Blends A and B. How much of each blend should be mixed?
+
+Hint: write out the constraints for this problem
+
+### Task 2
+Fit a quadratic to the following points:
+
+$$(1, 1), \quad (2, 4), \quad (3, 9)$$
+
+
+### Task 3
+
+Solve the circuit drawn below using nodal analysis in NumPy.
+
+![Circuit diagram](./exercise_circuit.png){width=100%}
